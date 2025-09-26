@@ -33,7 +33,7 @@ class Embedding(Module):
         self.num_embeddings = num_embeddings # Vocab size
         self.embedding_dim  = embedding_dim  # Embedding Dimension
         ### BEGIN ASSIGN3_2
-        normal = np.random.normal(num_embeddings, embedding_dim)
+        normal = np.random.normal(0, 1, (num_embeddings, embedding_dim))
         r = tensor_from_numpy(normal, backend=backend)
         self.weights = Parameter(r)
         ### END ASSIGN3_2
@@ -48,9 +48,11 @@ class Embedding(Module):
             output : Tensor of shape (batch_size, seq_len, embedding_dim)
         """
         bs, seq_len = x.shape
-        ### BEGIN ASSIGN3_2
+        
         output = one_hot(x, self.num_embeddings)
+        output = output.view(bs* seq_len, self.num_embeddings)        
         output = output @ self.weights.value
+        output = output.view(bs, seq_len, self.embedding_dim)
         return output
         ### END ASSIGN3_2
 
@@ -76,13 +78,9 @@ class Dropout(Module):
         """
         ### BEGIN ASSIGN3_2
         scale = 1 - self.p_dropout
-        r = rand(x.shape, backend=x.backend)
-        keep = r > self.p_dropout
-        # print("keep", keep.to_numpy()[:10])
-        # print("r", r.to_numpy()[:10])
-        print("p_dropout", self.p_dropout)
-        if self.training:
-            output = (x * keep) 
+        if self.training and self.p_dropout > 0:
+            keep_mask = tensor_from_numpy(np.random.binomial(1, self.p_dropout, x.shape), backend=x.backend)
+            output = (x * keep_mask) / scale
         else:
             output = x
 
@@ -150,8 +148,8 @@ class LayerNorm1d(Module):
         self.dim = dim
         self.eps = eps
         ### BEGIN ASSIGN3_2
-        self.weights = Parameter(ones((dim), backend=backend))
-        self.bias = Parameter(zeros((dim), backend=backend))
+        self.weights = Parameter(ones((dim,), backend=backend))
+        self.bias = Parameter(zeros((dim,), backend=backend))
         ### END ASSIGN3_2
 
     def forward(self, x: Tensor) -> Tensor:
@@ -167,10 +165,10 @@ class LayerNorm1d(Module):
         """
         batch, dim = x.shape
         ### BEGIN ASSIGN3_2
-        mean = x.mean(dim=1).view(batch, dim)
-        variance = x.var(dim=1).view(batch, dim)
+        mean = x.mean(dim=1)
+        variance = x.var(dim=1)
         output = x - mean
-        output = output / (variance + self.eps)
+        output = output / (variance + self.eps) ** 0.5
         output = output * self.weights.value
         output = output + self.bias.value
         return output
