@@ -79,7 +79,7 @@ class Dropout(Module):
         ### BEGIN ASSIGN3_2
         scale = 1 - self.p_dropout
         if self.training and self.p_dropout > 0:
-            keep_mask = tensor_from_numpy(np.random.binomial(1, self.p_dropout, x.shape), backend=x.backend)
+            keep_mask = tensor_from_numpy(np.random.binomial(1, 1 - self.p_dropout, x.shape), backend=x.backend)
             output = (x * keep_mask) / scale
         else:
             output = x

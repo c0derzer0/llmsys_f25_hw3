@@ -308,8 +308,8 @@ def generate(
 
             model_input = minitorch.tensor([token_ids], backend=backend)
             logits = model(idx=model_input)
-            last_token_logits = logits.to_numpy()[:, len(token_ids) - 1, :]
-            gen_id = last_token_logits.argmax()
+            last_token_logits = logits.to_numpy()[0, len(token_ids) - 1, :]
+            gen_id = int(last_token_logits.argmax())
 
             # END ASSIGN3_4
 
